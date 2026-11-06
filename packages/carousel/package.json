@@ -1,6 +1,6 @@
 {
   "name": "@mitchellslager/carousel",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A headless, accessible image carousel for React, driven by native CSS scroll snapping.",
   "license": "MIT",
   "author": "Mitchell Slager",
