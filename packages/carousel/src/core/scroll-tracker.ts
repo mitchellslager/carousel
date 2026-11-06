@@ -9,9 +9,13 @@
  * - the **settled** index, updated when scrolling ends, for consumers that
  *   should only see final values, such as `onIndexChange`.
  *
- * Positions are compared through `getBoundingClientRect`, so the same code
- * works for left-to-right and right-to-left layouts.
+ * Positions come from ./geometry, which works for left-to-right and
+ * right-to-left layouts alike.
  */
+
+import { findNearestSlide, isCentred, scrollSlideIntoCentre } from "./geometry"
+
+export { findNearestSlide } from "./geometry"
 
 export interface ScrollTrackerOptions {
   /** Returns the slides in DOM order. Called on every measurement. */
@@ -33,40 +37,17 @@ export interface ScrollTrackerOptions {
 export interface ScrollTracker {
   readonly activeIndex: number
   readonly settledIndex: number
-  /** Scrolls the slide at `index` (clamped to the slides) into the centre. */
-  scrollToIndex(index: number, behavior?: ScrollBehavior): void
+  /**
+   * Scrolls the slide at `index` (clamped to the slides) into the centre.
+   * Returns whether it had to scroll.
+   */
+  scrollToIndex(index: number, behavior?: ScrollBehavior): boolean
   /** Re-measures and settles at once, for example after slides changed. */
   update(): void
   destroy(): void
 }
 
 const DEFAULT_SETTLE_DELAY = 100
-
-function horizontalCentre(element: Element) {
-  const rect = element.getBoundingClientRect()
-  return rect.left + rect.width / 2
-}
-
-/**
- * Returns the index of the slide whose centre is nearest the viewport's
- * centre, or -1 when there are no slides.
- */
-export function findNearestSlide(
-  viewport: HTMLElement,
-  slides: readonly HTMLElement[]
-): number {
-  const centre = horizontalCentre(viewport)
-  let nearest = -1
-  let nearestDistance = Infinity
-  slides.forEach((slide, index) => {
-    const distance = Math.abs(horizontalCentre(slide) - centre)
-    if (distance < nearestDistance) {
-      nearest = index
-      nearestDistance = distance
-    }
-  })
-  return nearest
-}
 
 export function createScrollTracker(
   viewport: HTMLElement,
@@ -107,11 +88,28 @@ export function createScrollTracker(
     }
   }
 
+  let lastScroll = 0
+
+  // Without `scrollend`, a pause in scroll events may be a stalled smooth
+  // scroll or a finger resting mid-swipe. Settle only once a slide is centred,
+  // or after a longer quiet period, in case snapping is turned off.
+  function settleWhenAligned() {
+    const slides = getSlides()
+    const nearest = slides[findNearestSlide(viewport, slides)]
+    const quiet = performance.now() - lastScroll
+    if (nearest && !isCentred(viewport, nearest) && quiet < settleDelay * 5) {
+      settleTimer = setTimeout(settleWhenAligned, settleDelay)
+      return
+    }
+    settleNow()
+  }
+
   function handleScroll() {
     if (!frame) frame = requestAnimationFrame(measure)
     if (!useScrollEnd) {
+      lastScroll = performance.now()
       clearTimeout(settleTimer)
-      settleTimer = setTimeout(settleNow, settleDelay)
+      settleTimer = setTimeout(settleWhenAligned, settleDelay)
     }
   }
 
@@ -128,11 +126,8 @@ export function createScrollTracker(
     scrollToIndex(index, behavior = "auto") {
       const slides = getSlides()
       const target = slides[Math.min(Math.max(index, 0), slides.length - 1)]
-      if (!target) return
-      const delta = horizontalCentre(target) - horizontalCentre(viewport)
-      // Sub-pixel differences are rounding, not a different slide.
-      if (Math.abs(delta) < 1) return
-      viewport.scrollBy({ left: delta, behavior })
+      if (!target) return false
+      return scrollSlideIntoCentre(viewport, target, behavior)
     },
     update: settleNow,
     destroy() {

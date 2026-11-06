@@ -20,8 +20,30 @@
   [data-carousel-slide] {
     flex: 0 0 100%;
     min-width: 0;
+    /*
+     * No scroll-snap-stop: always. It would also stop programmatic scrolls at
+     * the next slide, so thumbnails could not jump several slides at once.
+     */
     scroll-snap-align: center;
-    scroll-snap-stop: always;
+  }
+
+  [data-carousel-thumbnails] {
+    display: flex;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  [data-carousel-thumbnails]::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-carousel-thumbnails][data-orientation="vertical"] {
+    flex-direction: column;
+  }
+
+  [data-carousel-thumbnail] {
+    flex: none;
   }
 
   @media (prefers-reduced-motion: reduce) {

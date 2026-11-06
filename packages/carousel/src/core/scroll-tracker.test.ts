@@ -138,7 +138,7 @@ describe("createScrollTracker", () => {
     const { viewport, getSlides } = createViewport()
     const { tracker, onSettle } = track(viewport, { getSlides })
 
-    tracker.scrollToIndex(2, "instant")
+    expect(tracker.scrollToIndex(2, "instant")).toBe(true)
 
     await expect.poll(() => onSettle.mock.calls).toEqual([[2]])
     expect(offCentre(viewport, getSlides()[2]!)).toBeLessThan(1)
@@ -171,7 +171,7 @@ describe("createScrollTracker", () => {
       getSlides,
     })
 
-    tracker.scrollToIndex(0, "instant")
+    expect(tracker.scrollToIndex(0, "instant")).toBe(false)
 
     await sleep(200)
     expect(onActiveChange).not.toHaveBeenCalled()
@@ -202,6 +202,25 @@ describe("createScrollTracker", () => {
 
     userScrollTo(viewport, 1)
 
+    await expect.poll(() => onSettle.mock.calls).toEqual([[1]])
+  })
+
+  it("waits while the debounce fallback rests between slides", async () => {
+    const { viewport, getSlides } = createViewport()
+    // Without snapping, the position can rest between two slides, like a
+    // finger holding a swipe halfway.
+    viewport.style.scrollSnapType = "none"
+    const { onSettle } = track(viewport, {
+      getSlides,
+      settle: "debounce",
+      settleDelay: 50,
+    })
+
+    viewport.scrollLeft = 1.4 * SLIDE_WIDTH
+
+    await sleep(120)
+    expect(onSettle).not.toHaveBeenCalled()
+    // It still settles eventually, so turning snapping off never hangs it.
     await expect.poll(() => onSettle.mock.calls).toEqual([[1]])
   })
 

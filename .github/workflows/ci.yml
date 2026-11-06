@@ -8,6 +8,9 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    # A healthy run takes about two minutes; fail a hung one instead of
+    # waiting for the six-hour default.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       # Install pnpm (version from `packageManager`) before setup-node, which caches the pnpm store.
@@ -24,8 +27,12 @@ jobs:
 
       # Scroll snapping differs per engine, so CI tests in all three.
       # vitest.config.ts runs every engine when CI is set.
+      # Usually under a minute. Downloads or apt can hang on the runner, so
+      # fail fast and clearly when they do.
       - run: pnpm --filter @mitchellslager/carousel exec playwright install --with-deps chromium firefox webkit
+        timeout-minutes: 5
       - run: pnpm test
+        timeout-minutes: 5
 
       - run: pnpm build
       - run: pnpm check:package
