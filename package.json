@@ -1,0 +1,30 @@
+{
+  "name": "carousel-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.3.1",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter demo dev",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "oxlint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:package": "pnpm --filter @mitchellslager/carousel check:package",
+    "size": "pnpm --filter @mitchellslager/carousel size",
+    "changeset": "changeset",
+    "release": "pnpm --filter @mitchellslager/carousel build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
+    "oxlint": "^1.91.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "^7.0.2"
+  }
+}

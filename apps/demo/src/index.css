@@ -1,0 +1,6 @@
+/*
+ * Declare the carousel layer first, so it has the lowest priority and every
+ * Tailwind utility overrides the carousel's base styles.
+ */
+@layer carousel;
+@import "tailwindcss";

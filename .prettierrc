@@ -1,0 +1,17 @@
+{
+  "endOfLine": "lf",
+  "semi": false,
+  "singleQuote": false,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 80,
+  "overrides": [
+    {
+      "files": "apps/demo/**",
+      "options": {
+        "plugins": ["prettier-plugin-tailwindcss"],
+        "tailwindStylesheet": "apps/demo/src/index.css"
+      }
+    }
+  ]
+}

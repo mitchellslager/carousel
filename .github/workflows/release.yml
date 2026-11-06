@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  # Needed for npm trusted publishing (OIDC) and provenance.
+  id-token: write
+
+jobs:
+  release:
+    # npm provenance requires a public repository. While the repo is private,
+    # skip releasing entirely, so nothing is published by accident.
+    if: github.event.repository.visibility == 'public'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+
+      # Opens a "Version packages" PR while changesets are pending, and
+      # publishes to npm once that PR is merged. No NPM_TOKEN: npm trusted
+      # publishing authenticates through the id-token permission above, and
+      # the action uses the workflow's GitHub token by default.
+      - uses: changesets/action@v2
+        with:
+          publish-script: pnpm release

@@ -1,0 +1,32 @@
+/*
+ * Functional base styles for @mitchellslager/carousel. They live in a cascade
+ * layer, so any unlayered style of your own wins without extra specificity.
+ * Visual styling (colours, buttons, thumbnails) is up to you.
+ */
+@layer carousel {
+  [data-carousel-viewport] {
+    display: flex;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+
+  [data-carousel-viewport]::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-carousel-slide] {
+    flex: 0 0 100%;
+    min-width: 0;
+    scroll-snap-align: center;
+    scroll-snap-stop: always;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-carousel-viewport] {
+      scroll-behavior: auto;
+    }
+  }
+}

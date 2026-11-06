@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    versioning-strategy: increase
+    # Conventional Commits: "chore(deps): …" and "chore(deps-dev): …".
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      # Low-risk tooling updates; merged automatically by
+      # .github/workflows/dependabot-automerge.yml once CI passes.
+      dev-tooling:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Conventional Commits: "ci(deps): …".
+    commit-message:
+      prefix: ci
+      include: scope

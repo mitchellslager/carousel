@@ -1,0 +1,78 @@
+{
+  "name": "@mitchellslager/carousel",
+  "version": "0.0.0",
+  "description": "A headless, accessible image carousel for React, driven by native CSS scroll snapping.",
+  "license": "MIT",
+  "author": "Mitchell Slager",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mitchellslager/carousel.git",
+    "directory": "packages/carousel"
+  },
+  "keywords": [
+    "react",
+    "carousel",
+    "gallery",
+    "slider",
+    "thumbnails",
+    "scroll-snap",
+    "accessibility",
+    "headless"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "carousel:source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": {
+      "carousel:source": "./src/styles.css",
+      "default": "./dist/styles.css"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc",
+    "check:package": "publint --strict --pack npm && attw --pack . --profile esm-only --exclude-entrypoints styles.css",
+    "size": "size-limit"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "size-limit": [
+    {
+      "name": "JavaScript (min+gzip, React excluded)",
+      "path": "dist/index.js",
+      "limit": "4 kB"
+    }
+  ],
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@size-limit/file": "^14.3.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitest/browser-playwright": "^5.1.0",
+    "playwright": "^1.64.1",
+    "publint": "^0.3.25",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "size-limit": "^14.3.0",
+    "tsdown": "^0.23.5",
+    "vitest": "^5.1.0"
+  }
+}
