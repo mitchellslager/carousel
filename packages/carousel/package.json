@@ -56,14 +56,15 @@
   },
   "size-limit": [
     {
-      "name": "JavaScript (min+gzip, React excluded)",
+      "name": "JavaScript (minified, brotli, React excluded)",
       "path": "dist/index.js",
+      "import": "{ Carousel }",
       "limit": "4 kB"
     }
   ],
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
-    "@size-limit/file": "^14.3.0",
+    "@size-limit/preset-small-lib": "^14.3.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitest/browser-playwright": "^5.1.0",
@@ -73,6 +74,7 @@
     "react-dom": "^19.3.1",
     "size-limit": "^14.3.0",
     "tsdown": "^0.23.5",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "vitest-browser-react": "^2.3.0"
   }
 }

@@ -50,10 +50,11 @@ Compound components:
 
 - **Scroll position is the source of truth.** Buttons, thumbnails and the controlled prop only call `scrollTo`; the active index always comes from what is scrolled into view. React state never drives the scroll position directly, which avoids feedback loops during smooth scrolling.
 - **Two indexes.** The live _active_ index follows the slide nearest the viewport centre while scrolling, so the counter and thumbnails react at once. The _settled_ index updates when scrolling ends; only that one calls `onIndexChange`, so analytics and URL sync see final values only.
-- **Settling** uses the `scrollend` event where the browser has it, and a short debounce after the last `scroll` event where it does not. (`scrollsnapchange` is Chromium-only, so one code path based on `scrollend` serves every engine.)
+- **Settling** uses the `scrollend` event where the browser has it, and a short debounce after the last `scroll` event where it does not. (`scrollsnapchange` is Chromium-only, so one code path based on `scrollend` serves every engine.) The debounce settles only once a slide is centred, so a stalled smooth scroll or a finger resting mid-swipe does not count; after five quiet periods it settles anyway, in case snapping is turned off.
 - **Controlled and uncontrolled:** `index` / `onIndexChange` / `defaultIndex`. Controlled means "requested position": a change to `index` scrolls there, but a swipe always wins and reports itself through `onIndexChange`.
 - **Initial position:** the slide at `defaultIndex` gets `scroll-initial-target: nearest`, which positions it before hydration in Chromium; a layout effect with an instant scroll covers other browsers.
 - **Slide count and order** come from the DOM: the viewport's `[data-carousel-slide]` children, watched with a `MutationObserver`. Thumbnails carry an explicit `index`, because they may be rendered in another order or as a subset.
+- **Server rendering** therefore does not know the slides yet: until hydration the counter is empty, slides have no `aria-label` and are not `inert`, Prev and Next are `aria-disabled`, and slides use the basic `group` role.
 - **Fewer slides:** when slides disappear, the index clamps to the last slide. To reset completely, consumers set `key` on `Root` (for example `key={variantId}`).
 - **Edges:** at the first and last slide, Prev and Next get `aria-disabled` (not `disabled`, so focus is not lost).
 
@@ -84,6 +85,7 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 ## Styling
 
 - The package is headless. It ships `styles.css` with only the functional base (layout, snapping, hidden scrollbar, reduced motion) inside `@layer carousel`, so any unlayered consumer style wins.
+- The base styles deliberately leave out `scroll-snap-stop: always`: browsers apply it to programmatic scrolls too, so a thumbnail could not jump several slides at once.
 - Cascade layers declared later win over earlier ones. Consumers using Tailwind (or other layered CSS) declare `@layer carousel;` before their own layers, so their utilities override the base styles. The README documents this.
 - State is exposed as `data-*` attributes (`data-active`, `data-disabled`, `data-orientation`) for styling, including Tailwind variants such as `data-[active]:ring-2`.
 - Tailwind is used only in the demo app.
@@ -95,5 +97,5 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 - TypeScript `strict` with `noUncheckedIndexedAccess`.
 - oxlint (including `jsx-a11y`) and Prettier.
 - Tests run in Vitest browser mode with Playwright, because scroll snapping needs a real layout engine: Chromium locally, Chromium, Firefox and WebKit in CI.
-- `publint`, `@arethetypeswrong/cli` and `size-limit` (4 kB min+gzip for the JavaScript) run in CI.
+- `publint`, `@arethetypeswrong/cli` and `size-limit` (4 kB for the JavaScript, minified and brotlied, React excluded) run in CI.
 - Changesets for versions and the changelog; npm trusted publishing with provenance from GitHub Actions.
