@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react"
+import { createContext, useContext, type Context } from "react"
 
 import type { CarouselLabels } from "./labels"
 
@@ -29,7 +29,8 @@ export interface CarouselContextValue {
   }
 }
 
-export const CarouselContext = createContext<CarouselContextValue | null>(null)
+export const CarouselContext: Context<CarouselContextValue | null> =
+  createContext<CarouselContextValue | null>(null)
 
 export function useCarouselContext(part: string): CarouselContextValue {
   const context = useContext(CarouselContext)

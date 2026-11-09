@@ -3,6 +3,7 @@ import {
   useState,
   type ComponentProps,
   type KeyboardEvent,
+  type ReactElement,
   type ReactNode,
 } from "react"
 
@@ -20,7 +21,11 @@ import {
 export type ViewportProps = ComponentProps<"div">
 
 /** The scroll-snap container. Its direct `Carousel.Slide` children are the slides. */
-export function Viewport({ ref, children, ...props }: ViewportProps) {
+export function Viewport({
+  ref,
+  children,
+  ...props
+}: ViewportProps): ReactElement {
   const { ids, initialIndex, setViewport } = useCarouselContext("Viewport")
   const mergedRef = useMergedRefs<HTMLDivElement>(setViewport, ref)
 
@@ -52,7 +57,7 @@ export function Viewport({ ref, children, ...props }: ViewportProps) {
 export type SlideProps = ComponentProps<"div">
 
 /** One slide. Slides that are not active are `inert`. */
-export function Slide({ ref, ...props }: SlideProps) {
+export function Slide({ ref, ...props }: SlideProps): ReactElement {
   const { slides, activeIndex, hasThumbnails, labels, ids } =
     useCarouselContext("Slide")
   const [element, setElement] = useState<HTMLDivElement | null>(null)
@@ -105,13 +110,13 @@ function useNavigation(direction: 1 | -1, part: string) {
 }
 
 /** Scrolls to the previous slide. `aria-disabled` on the first slide. */
-export function Prev({ render, ...props }: NavigationProps) {
+export function Prev({ render, ...props }: NavigationProps): ReactElement {
   const internal = useNavigation(-1, "Prev")
   return renderPart("button", mergeProps(internal, props), render)
 }
 
 /** Scrolls to the next slide. `aria-disabled` on the last slide. */
-export function Next({ render, ...props }: NavigationProps) {
+export function Next({ render, ...props }: NavigationProps): ReactElement {
   const internal = useNavigation(1, "Next")
   return renderPart("button", mergeProps(internal, props), render)
 }
@@ -137,7 +142,10 @@ const defaultCounter = ({ index, total }: CounterState) =>
  * slide labels and the live region already convey it. Empty until the slides
  * are known, so also during server rendering.
  */
-export function Counter({ children = defaultCounter, ...props }: CounterProps) {
+export function Counter({
+  children = defaultCounter,
+  ...props
+}: CounterProps): ReactElement {
   const { activeIndex, slides } = useCarouselContext("Counter")
   const total = slides.length
   const counterProps = mergeProps(
@@ -175,7 +183,7 @@ const PREVIOUS_KEYS = {
 export function Thumbnails({
   orientation = "horizontal",
   ...props
-}: ThumbnailsProps) {
+}: ThumbnailsProps): ReactElement {
   const { labels, setHasThumbnails } = useCarouselContext("Thumbnails")
 
   useEffect(() => {
@@ -235,7 +243,12 @@ export interface ThumbnailProps extends ComponentProps<"button"> {
 }
 
 /** A tab that selects slide `index`. Keeps itself in view when active. */
-export function Thumbnail({ index, render, ref, ...props }: ThumbnailProps) {
+export function Thumbnail({
+  index,
+  render,
+  ref,
+  ...props
+}: ThumbnailProps): ReactElement {
   const { activeIndex, slides, goTo, labels, ids, behavior } =
     useCarouselContext("Thumbnail")
   const [element, setElement] = useState<HTMLButtonElement | null>(null)
