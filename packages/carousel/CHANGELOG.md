@@ -1,5 +1,11 @@
 # @mitchellslager/carousel
 
+## 0.2.1
+
+### Patch Changes
+
+- [#15](https://github.com/mitchellslager/carousel/pull/15) [`a2757a0`](https://github.com/mitchellslager/carousel/commit/a2757a0a66239ba48aa74cb21517bed1f2b53192) Thanks [@mitchellslager](https://github.com/mitchellslager)! - Keep the active slide in place when the window resizes in large steps, for example from a phone width to a desktop width. The carousel could end up on another slide, or between two, because browsers clamp and re-snap the scroll position on their own.
+
 ## 0.2.0
 
 ### Minor Changes
