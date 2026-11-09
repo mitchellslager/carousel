@@ -55,6 +55,8 @@ export interface ScrollTracker {
 }
 
 const DEFAULT_SETTLE_DELAY = 100
+/** Milliseconds without resizing after which the active slide is let go. */
+const RESIZE_QUIET = 250
 
 export function createScrollTracker(
   viewport: HTMLElement,
@@ -77,8 +79,62 @@ export function createScrollTracker(
   let settleTimer: ReturnType<typeof setTimeout> | undefined
   let suspended = false
 
+  // Resizing keeps the scroll offset in pixels while the slides change width,
+  // which leaves the viewport between two slides. Browsers do not reliably
+  // re-snap: they clamp the offset when the viewport shrinks, and Firefox
+  // later scrolls back, smoothly, to a slide it was clamped to. So after a
+  // resize the scroll position says nothing about where the user is:
+  //
+  // - until the observer has seen the new width, `measure` and `settleNow`
+  //   ignore the scroll position, which mixes the old offset with new widths;
+  // - the observer then puts the active slide back in the centre at once,
+  //   before the next paint, and pins it there: any scroll the browser starts
+  //   is undone, until the resize has been quiet for a moment or the user
+  //   interacts with the carousel.
+  const widthOf = () => viewport.getBoundingClientRect().width
+  let width = widthOf()
+  let pinned = -1
+  let pinTimer: ReturnType<typeof setTimeout> | undefined
+
+  /** Puts the pinned slide back in the centre. Returns whether one is pinned. */
+  function holdPin() {
+    const target = getSlides()[pinned]
+    if (!target) return false
+    scrollSlideIntoCentre(viewport, target, "instant")
+    return true
+  }
+
+  function unpin() {
+    if (pinned === -1) return
+    pinned = -1
+    clearTimeout(pinTimer)
+    settleNow()
+  }
+
+  const resizeObserver =
+    typeof ResizeObserver === "undefined"
+      ? undefined
+      : new ResizeObserver(() => {
+          if (widthOf() === width) return
+          width = widthOf()
+          pinned = activeIndex
+          clearTimeout(pinTimer)
+          pinTimer = setTimeout(unpin, RESIZE_QUIET)
+          holdPin()
+        })
+  resizeObserver?.observe(viewport)
+  const resizePending = () =>
+    resizeObserver !== undefined && widthOf() !== width
+
+  // Anything the user does to the carousel ends the pin at once.
+  const interactions = ["pointerdown", "wheel", "keydown", "touchstart"]
+  for (const type of interactions) {
+    viewport.addEventListener(type, unpin, { passive: true })
+  }
+
   function measure() {
     frame = 0
+    if (resizePending() || pinned !== -1) return
     const index = findNearestSlide(viewport, getSlides())
     if (index !== -1 && index !== activeIndex) {
       activeIndex = index
@@ -89,6 +145,7 @@ export function createScrollTracker(
   function settleNow() {
     cancelAnimationFrame(frame)
     clearTimeout(settleTimer)
+    if (resizePending() || pinned !== -1) return
     measure()
     if (!suspended && activeIndex !== settledIndex) {
       settledIndex = activeIndex
@@ -113,6 +170,7 @@ export function createScrollTracker(
   }
 
   function handleScroll() {
+    if (pinned !== -1 && holdPin()) return
     if (!frame) frame = requestAnimationFrame(measure)
     if (!useScrollEnd) {
       lastScroll = performance.now()
@@ -124,22 +182,6 @@ export function createScrollTracker(
   viewport.addEventListener("scroll", handleScroll, { passive: true })
   if (useScrollEnd) viewport.addEventListener("scrollend", settleNow)
 
-  // Resizing keeps the scroll offset in pixels while the slides change width,
-  // which leaves the viewport between two slides. Browsers do not reliably
-  // re-snap (and may report the wrong slide on the way), so put the active
-  // slide back in the centre at once, before the next paint.
-  let width = viewport.clientWidth
-  const resizeObserver =
-    typeof ResizeObserver === "undefined"
-      ? undefined
-      : new ResizeObserver(() => {
-          if (viewport.clientWidth === width) return
-          width = viewport.clientWidth
-          const target = getSlides()[activeIndex]
-          if (target) scrollSlideIntoCentre(viewport, target, "instant")
-        })
-  resizeObserver?.observe(viewport)
-
   return {
     get activeIndex() {
       return activeIndex
@@ -148,6 +190,7 @@ export function createScrollTracker(
       return settledIndex
     },
     scrollToIndex(index, behavior = "auto") {
+      unpin()
       const slides = getSlides()
       const target = slides[Math.min(Math.max(index, 0), slides.length - 1)]
       if (!target) return false
@@ -166,6 +209,10 @@ export function createScrollTracker(
       clearTimeout(settleTimer)
       viewport.removeEventListener("scroll", handleScroll)
       viewport.removeEventListener("scrollend", settleNow)
+      for (const type of interactions) {
+        viewport.removeEventListener(type, unpin)
+      }
+      clearTimeout(pinTimer)
       resizeObserver?.disconnect()
     },
   }

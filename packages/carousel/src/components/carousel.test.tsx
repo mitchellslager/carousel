@@ -312,6 +312,90 @@ describe("navigation", () => {
     expect(onIndexChange.mock.calls).toEqual([[2]])
   })
 
+  it("stays aligned while the viewport resizes every frame", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery count={10} onIndexChange={onIndexChange} />)
+    swipeTo(6)
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[6]])
+    const root = viewport().closest<HTMLElement>("[data-carousel-root]")!
+
+    // Like dragging a window edge from a phone width to a desktop width and
+    // back: a new size every frame, without waiting for scrolling to settle.
+    const widths = [
+      ...Array.from({ length: 40 }, (_, i) => 200 + i * 17),
+      ...Array.from({ length: 40 }, (_, i) => 880 - i * 19),
+    ]
+    for (const width of widths) {
+      root.style.width = `${width}px`
+      await new Promise(requestAnimationFrame)
+    }
+    const width = widths[widths.length - 1]!
+
+    await expect.poll(() => viewport().scrollLeft).toBe(6 * width)
+    await expect.element(counter()).toHaveTextContent("7 / 10")
+    await sleep(300)
+    expect(onIndexChange.mock.calls).toEqual([[6]])
+  })
+
+  it("stays aligned when the window jumps between phone and desktop widths", async () => {
+    await page.viewport(375, 700)
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(
+      <Gallery
+        count={10}
+        style={{ width: "auto" }}
+        onIndexChange={onIndexChange}
+      />
+    )
+    const aligned = () => {
+      const active = slides().find((slide) => slide.hasAttribute("data-active"))
+      return Math.round(
+        active!.getBoundingClientRect().left -
+          viewport().getBoundingClientRect().left
+      )
+    }
+    viewport().scrollTo({
+      left: 6 * viewport().clientWidth,
+      behavior: "instant",
+    })
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[6]])
+
+    for (const [width, height] of [
+      [1280, 800],
+      [375, 700],
+      [1024, 768],
+      [414, 896],
+    ] as const) {
+      const before = viewport().clientWidth
+      await page.viewport(width, height)
+      await expect.poll(() => viewport().clientWidth).not.toBe(before)
+      // Let the browser render, as it does while a window is being resized.
+      await new Promise(requestAnimationFrame)
+      await new Promise(requestAnimationFrame)
+      await expect.poll(aligned).toBe(0)
+      await expect.element(counter()).toHaveTextContent("7 / 10")
+    }
+    await sleep(300)
+    expect(onIndexChange.mock.calls).toEqual([[6]])
+  })
+
+  it("lets the user scroll straight after a resize", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery onIndexChange={onIndexChange} />)
+    const root = viewport().closest<HTMLElement>("[data-carousel-root]")!
+    root.style.width = "250px"
+    await expect.poll(() => viewport().clientWidth).toBe(250)
+    await new Promise(requestAnimationFrame)
+    await new Promise(requestAnimationFrame)
+
+    // A wheel or touch on the viewport comes before the scroll it causes.
+    viewport().dispatchEvent(new WheelEvent("wheel", { deltaX: 500 }))
+    viewport().scrollTo({ left: 2 * 250, behavior: "instant" })
+
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[2]])
+    expect(viewport().scrollLeft).toBe(500)
+  })
+
   it("clamps when slides are removed", async () => {
     const screen = await render(<Gallery defaultIndex={4} />)
     await expect.element(counter()).toHaveTextContent("5 / 5")
