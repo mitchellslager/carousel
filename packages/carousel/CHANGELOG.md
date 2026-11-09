@@ -1,5 +1,13 @@
 # @mitchellslager/carousel
 
+## 0.1.2
+
+### Patch Changes
+
+- [#9](https://github.com/mitchellslager/carousel/pull/9) [`204dec0`](https://github.com/mitchellslager/carousel/commit/204dec069a0d34720e623d35c96ad94e83f1b3c0) Thanks [@mitchellslager](https://github.com/mitchellslager)! - Keep the active thumbnail in the centre of its strip instead of at its edge, and jump there instantly when the carousel mounts.
+
+- [#9](https://github.com/mitchellslager/carousel/pull/9) [`204dec0`](https://github.com/mitchellslager/carousel/commit/204dec069a0d34720e623d35c96ad94e83f1b3c0) Thanks [@mitchellslager](https://github.com/mitchellslager)! - Keep the active slide aligned when the carousel resizes, for example when the browser window changes size, instead of ending up between two slides.
+
 ## 0.1.1
 
 ### Patch Changes
