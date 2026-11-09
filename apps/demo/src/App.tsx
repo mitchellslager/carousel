@@ -44,6 +44,7 @@ function Gallery({
   return (
     <Carousel.Root
       className={`grid gap-3 ${vertical ? "grid-cols-[3.5rem_1fr]" : ""}`}
+      mouseDrag
       {...rootProps}
     >
       <Carousel.Viewport className={vertical ? "col-start-2" : ""}>
@@ -184,8 +185,8 @@ export function App() {
         <h1 className="text-2xl font-semibold">@mitchellslager/carousel</h1>
         <p className="text-neutral-600 dark:text-neutral-400">
           A headless, accessible image carousel for React, driven by native CSS
-          scroll snapping. Swipe, use the buttons, or tab to the thumbnails and
-          use the arrow keys.
+          scroll snapping. Swipe or drag, use the buttons, or tab to the
+          thumbnails and use the arrow keys.
         </p>
         <div className="flex gap-4 text-sm">
           <label className="flex items-center gap-2">
