@@ -116,6 +116,22 @@ export function createScrollTracker(
   viewport.addEventListener("scroll", handleScroll, { passive: true })
   if (useScrollEnd) viewport.addEventListener("scrollend", settleNow)
 
+  // Resizing keeps the scroll offset in pixels while the slides change width,
+  // which leaves the viewport between two slides. Browsers do not reliably
+  // re-snap (and may report the wrong slide on the way), so put the active
+  // slide back in the centre at once, before the next paint.
+  let width = viewport.clientWidth
+  const resizeObserver =
+    typeof ResizeObserver === "undefined"
+      ? undefined
+      : new ResizeObserver(() => {
+          if (viewport.clientWidth === width) return
+          width = viewport.clientWidth
+          const target = getSlides()[activeIndex]
+          if (target) scrollSlideIntoCentre(viewport, target, "instant")
+        })
+  resizeObserver?.observe(viewport)
+
   return {
     get activeIndex() {
       return activeIndex
@@ -135,6 +151,7 @@ export function createScrollTracker(
       clearTimeout(settleTimer)
       viewport.removeEventListener("scroll", handleScroll)
       viewport.removeEventListener("scrollend", settleNow)
+      resizeObserver?.disconnect()
     },
   }
 }

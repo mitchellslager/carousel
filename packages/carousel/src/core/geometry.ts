@@ -1,8 +1,8 @@
 /**
  * Scroll geometry helpers. Everything is measured with
- * `getBoundingClientRect` and moved with `scrollBy`, which both use physical
- * coordinates, so the same code works for left-to-right and right-to-left
- * layouts.
+ * `getBoundingClientRect` and moved by a physical offset (`scrollBy`, or
+ * `scrollTo` with `scrollLeft + offset`, which is what `scrollBy` does), so
+ * the same code works for left-to-right and right-to-left layouts.
  */
 
 /** Differences below one pixel are rounding, not a position to move to. */
@@ -51,7 +51,10 @@ export function scrollSlideIntoCentre(
 ): boolean {
   const delta = horizontalCentre(slide) - horizontalCentre(viewport)
   if (Math.abs(delta) < TOLERANCE) return false
-  viewport.scrollBy({ left: delta, behavior })
+  // An absolute target, not scrollBy: if the browser adjusts the scroll
+  // position at the same time (re-snapping after a resize), a relative
+  // scroll would add to that adjustment instead of replacing it.
+  viewport.scrollTo({ left: viewport.scrollLeft + delta, behavior })
   return true
 }
 

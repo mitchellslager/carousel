@@ -233,6 +233,23 @@ describe("navigation", () => {
     await expect.poll(() => onIndexChange.mock.lastCall).toEqual([4])
   })
 
+  it("keeps the active slide aligned when the viewport resizes", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery onIndexChange={onIndexChange} />)
+    swipeTo(2)
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[2]])
+
+    const root = viewport().closest<HTMLElement>("[data-carousel-root]")!
+    for (const width of [200, 450, 260]) {
+      root.style.width = `${width}px`
+      await expect.poll(() => viewport().scrollLeft).toBe(2 * width)
+    }
+
+    await expect.element(counter()).toHaveTextContent("3 / 5")
+    await sleep(200)
+    expect(onIndexChange.mock.calls).toEqual([[2]])
+  })
+
   it("clamps when slides are removed", async () => {
     const screen = await render(<Gallery defaultIndex={4} />)
     await expect.element(counter()).toHaveTextContent("5 / 5")
