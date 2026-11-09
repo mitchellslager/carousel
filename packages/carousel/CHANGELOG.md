@@ -1,5 +1,11 @@
 # @mitchellslager/carousel
 
+## 0.2.0
+
+### Minor Changes
+
+- [#13](https://github.com/mitchellslager/carousel/pull/13) [`83250e5`](https://github.com/mitchellslager/carousel/commit/83250e564d562809a56d992cec2161c971404c40) Thanks [@mitchellslager](https://github.com/mitchellslager)! - Add a `mouseDrag` option to `Root`, so a mouse can drag the slides like a finger swipes them, and drag the thumbnail strip. A quick flick moves on to the next slide, and the click that ends a drag does not select a thumbnail or open a link in a slide.
+
 ## 0.1.2
 
 ### Patch Changes
