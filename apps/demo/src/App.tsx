@@ -94,7 +94,9 @@ function Gallery({
       </div>
       <Carousel.Thumbnails
         orientation={orientation}
-        className={vertical ? "max-h-80 w-16 gap-2" : "gap-2"}
+        // Vertical: contain-size stops the strip from adding to the row's
+        // height, so it stretches to the slide's height and scrolls instead.
+        className={vertical ? "w-16 gap-2 contain-size" : "gap-2"}
       >
         {pictures.map((picture, i) => (
           <Carousel.Thumbnail
