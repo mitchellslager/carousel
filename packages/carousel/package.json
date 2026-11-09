@@ -4,6 +4,8 @@
   "description": "A headless, accessible image carousel for React, driven by native CSS scroll snapping.",
   "license": "MIT",
   "author": "Mitchell Slager",
+  "homepage": "https://mitchellslager.github.io/carousel/",
+  "bugs": "https://github.com/mitchellslager/carousel/issues",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mitchellslager/carousel.git",
