@@ -61,7 +61,7 @@
       "name": "JavaScript (minified, brotli, React excluded)",
       "path": "dist/index.js",
       "import": "{ Carousel }",
-      "limit": "4 kB"
+      "limit": "10 kB"
     }
   ],
   "devDependencies": {

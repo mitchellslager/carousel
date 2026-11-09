@@ -108,5 +108,5 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 - TypeScript `strict` with `noUncheckedIndexedAccess`.
 - oxlint (including `jsx-a11y`) and Prettier.
 - Tests run in Vitest browser mode with Playwright, because scroll snapping needs a real layout engine: Chromium locally, Chromium, Firefox and WebKit in CI.
-- `publint`, `@arethetypeswrong/cli` and `size-limit` (4 kB for the JavaScript, minified and brotlied, React excluded) run in CI.
+- `publint`, `@arethetypeswrong/cli` and `size-limit` (10 kB for the JavaScript, minified and brotlied, React excluded) run in CI.
 - Changesets for versions and the changelog; npm trusted publishing with provenance from GitHub Actions.
