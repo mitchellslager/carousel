@@ -44,6 +44,13 @@ export interface ScrollTracker {
   scrollToIndex(index: number, behavior?: ScrollBehavior): boolean
   /** Re-measures and settles at once, for example after slides changed. */
   update(): void
+  /**
+   * Holds back settling, for example while a mouse drag moves the viewport:
+   * the active index still follows, but pauses in scrolling do not settle.
+   */
+  suspend(): void
+  /** Lifts `suspend` and settles at once. */
+  resume(): void
   destroy(): void
 }
 
@@ -68,6 +75,7 @@ export function createScrollTracker(
   let settledIndex = initialIndex
   let frame = 0
   let settleTimer: ReturnType<typeof setTimeout> | undefined
+  let suspended = false
 
   function measure() {
     frame = 0
@@ -82,7 +90,7 @@ export function createScrollTracker(
     cancelAnimationFrame(frame)
     clearTimeout(settleTimer)
     measure()
-    if (activeIndex !== settledIndex) {
+    if (!suspended && activeIndex !== settledIndex) {
       settledIndex = activeIndex
       onSettle(activeIndex)
     }
@@ -146,6 +154,13 @@ export function createScrollTracker(
       return scrollSlideIntoCentre(viewport, target, behavior)
     },
     update: settleNow,
+    suspend() {
+      suspended = true
+    },
+    resume() {
+      suspended = false
+      settleNow()
+    },
     destroy() {
       cancelAnimationFrame(frame)
       clearTimeout(settleTimer)

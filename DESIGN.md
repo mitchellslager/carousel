@@ -14,6 +14,7 @@ In scope for v1:
 - WAI-ARIA carousel pattern, translatable labels.
 - `prefers-reduced-motion`.
 - Right-to-left layouts.
+- Mouse dragging, opt-in (see below).
 
 Out of scope for v1: autoplay, loop or rewind, several slides per view, a vertical main carousel, and image handling (lazy loading or preloading). Consumers bring their own `<img loading="lazy">` or `next/image`.
 
@@ -82,6 +83,14 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 - `styles.css` sets `scroll-behavior: smooth`, and `auto` under `prefers-reduced-motion: reduce`.
 - Programmatic scrolls read the same media query through `matchMedia` and follow changes to it.
 - A `motion` prop (`"auto" | "reduce"`) lets an app force reduced motion. Nothing ever forces animation when the user asked for reduced motion.
+
+## Mouse dragging
+
+- Browsers scroll the viewport with touch, trackpads, wheels and the keyboard, but a mouse cannot drag a scroll container. `mouseDrag` on `Root` adds that, for mouse pointers only; touch and pens keep native scrolling. It is opt-in, because a library built on native scrolling should not change how the mouse behaves unless asked.
+- The drag lives in `src/core/mouse-drag.ts`, apart from the React components. While dragging it turns snapping off and moves `scrollLeft` with the pointer. On release it scrolls smoothly (or instantly, with reduced motion) to the slide nearest the centre, or on to the neighbouring slide after a flick of at least 0.4 px/ms, and turns snapping back on once it rests there.
+- The scroll tracker is suspended from the first move until the landing ends, so a pause mid-drag does not settle and `onIndexChange` reports only where the drag lands. The active index, counter and thumbnails still follow live.
+- A press becomes a drag after 5 px, so clicks keep working. The click that ends a drag is swallowed, so a link in a slide does not open, and native dragging of images and links is prevented.
+- `styles.css` shows a `grab` cursor on a draggable viewport and `grabbing` while dragging, with text selection off.
 
 ## Styling
 

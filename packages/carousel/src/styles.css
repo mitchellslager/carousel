@@ -17,6 +17,16 @@
     display: none;
   }
 
+  /* Set by the mouseDrag option. */
+  [data-carousel-viewport][data-mouse-drag] {
+    cursor: grab;
+  }
+
+  [data-carousel-viewport][data-dragging] {
+    cursor: grabbing;
+    user-select: none;
+  }
+
   [data-carousel-slide] {
     flex: 0 0 100%;
     min-width: 0;

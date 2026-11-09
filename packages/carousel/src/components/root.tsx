@@ -12,6 +12,7 @@ import {
 } from "react"
 
 import { scrollSlideIntoCentre } from "../core/geometry"
+import { createMouseDrag } from "../core/mouse-drag"
 import { createScrollTracker, type ScrollTracker } from "../core/scroll-tracker"
 import {
   CarouselContext,
@@ -39,6 +40,11 @@ export interface RootProps extends Omit<ComponentProps<"div">, "onChange"> {
    * always jumps instead of scrolling smoothly.
    */
   motion?: "auto" | "reduce"
+  /**
+   * Lets a mouse drag the slides, like a finger swipe. Touch, trackpads and
+   * wheels scroll natively either way; browsers have no mouse dragging.
+   */
+  mouseDrag?: boolean
 }
 
 const SLIDE_SELECTOR = ":scope > [data-carousel-slide]"
@@ -70,6 +76,7 @@ export function Root({
   onIndexChange,
   labels: labelOverrides,
   motion = "auto",
+  mouseDrag = false,
   children,
   ...props
 }: RootProps): ReactElement {
@@ -143,6 +150,21 @@ export function Root({
       trackerRef.current = null
     }
   }, [viewport, initialIndex, labelsRef, onIndexChangeRef])
+
+  useEffect(() => {
+    if (!viewport || !mouseDrag) return
+    const drag = createMouseDrag(viewport, {
+      getSlides: () => [
+        ...viewport.querySelectorAll<HTMLElement>(SLIDE_SELECTOR),
+      ],
+      getBehavior: () => behaviorRef.current,
+      // Pauses while dragging are not the end of scrolling: settle (and call
+      // onIndexChange) only once the drag has landed on a slide.
+      onDragStart: () => trackerRef.current?.suspend(),
+      onDragEnd: () => trackerRef.current?.resume(),
+    })
+    return () => drag.destroy()
+  }, [viewport, mouseDrag, behaviorRef])
 
   // Controlled: a new `index` requests a scroll. If the parent keeps the old
   // value after a swipe, nothing happens, so the swipe wins.

@@ -82,6 +82,40 @@ function swipeTo(index: number) {
   element.scrollTo({ left: sign * index * WIDTH, behavior: "instant" })
 }
 
+/** Dispatches a mouse pointer event on the viewport, as a real mouse would. */
+function pointer(type: string, x: number, pointerType = "mouse") {
+  viewport().dispatchEvent(
+    new PointerEvent(type, {
+      pointerId: 1,
+      pointerType,
+      button: 0,
+      buttons: type === "pointerup" ? 0 : 1,
+      clientX: x,
+      clientY: 50,
+      bubbles: true,
+      cancelable: true,
+    })
+  )
+}
+
+/**
+ * Drags the viewport by `distance` pixels in `steps` moves, one per frame.
+ * `hold` waits before releasing, so the release carries no speed.
+ */
+async function drag(
+  distance: number,
+  { steps = 10, hold = 150, pointerType = "mouse" } = {}
+) {
+  const start = viewport().getBoundingClientRect().left + WIDTH / 2
+  pointer("pointerdown", start, pointerType)
+  for (let step = 1; step <= steps; step++) {
+    pointer("pointermove", start + (distance * step) / steps, pointerType)
+    await sleep(16)
+  }
+  await sleep(hold)
+  pointer("pointerup", start + distance, pointerType)
+}
+
 afterEach(() => {
   document.dir = "ltr"
 })
@@ -362,6 +396,108 @@ describe("thumbnails", () => {
 
     await expect.element(tab(2)).toHaveFocus()
     await expect.element(counter()).toHaveTextContent("2 / 5")
+  })
+})
+
+describe("mouse drag", () => {
+  it("moves to the slide a mouse drag ends nearest", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery mouseDrag onIndexChange={onIndexChange} />)
+
+    await drag(-200)
+
+    await expect.poll(() => viewport().scrollLeft).toBe(WIDTH)
+    await expect.element(counter()).toHaveTextContent("2 / 5")
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[1]])
+  })
+
+  it("reports only where the drag lands, not the slides on the way", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery mouseDrag onIndexChange={onIndexChange} />)
+    const start = viewport().getBoundingClientRect().left + WIDTH / 2
+
+    pointer("pointerdown", start)
+    pointer("pointermove", start - 650)
+    // A pause mid-drag must not count as the end of scrolling.
+    await sleep(400)
+    await expect.element(counter()).toHaveTextContent("3 / 5")
+    expect(onIndexChange).not.toHaveBeenCalled()
+    pointer("pointermove", start - 400)
+    await sleep(150)
+    pointer("pointerup", start - 400)
+
+    await expect.poll(() => viewport().scrollLeft).toBe(WIDTH)
+    await sleep(200)
+    expect(onIndexChange.mock.calls).toEqual([[1]])
+  })
+
+  it("snaps back after a short, slow drag", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery mouseDrag onIndexChange={onIndexChange} />)
+
+    await drag(-60)
+
+    await expect.poll(() => viewport().scrollLeft).toBe(0)
+    await sleep(200)
+    expect(onIndexChange).not.toHaveBeenCalled()
+  })
+
+  it("moves on after a short, fast flick", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery mouseDrag onIndexChange={onIndexChange} />)
+
+    await drag(-60, { steps: 3, hold: 0 })
+
+    await expect.poll(() => viewport().scrollLeft).toBe(WIDTH)
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[1]])
+  })
+
+  it("drags the other way in right-to-left layouts", async () => {
+    document.dir = "rtl"
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery mouseDrag onIndexChange={onIndexChange} />)
+
+    await drag(200)
+
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[1]])
+    await expect.element(counter()).toHaveTextContent("2 / 5")
+  })
+
+  it("swallows the click that ends a drag, but not a plain click", async () => {
+    await render(<Gallery mouseDrag />)
+    const onClick = vi.fn<() => void>()
+    document.addEventListener("click", onClick)
+    const link = page.getByRole("link", { name: "Link 1" }).element()
+    const start = viewport().getBoundingClientRect().left + WIDTH / 2
+
+    await drag(-60)
+    link.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    expect(onClick).not.toHaveBeenCalled()
+
+    await sleep(100)
+    pointer("pointerdown", start)
+    pointer("pointerup", start)
+    link.dispatchEvent(new MouseEvent("click", { bubbles: true }))
+    expect(onClick).toHaveBeenCalledOnce()
+    document.removeEventListener("click", onClick)
+  })
+
+  it("leaves touch to the browser", async () => {
+    await render(<Gallery mouseDrag />)
+
+    await drag(-200, { pointerType: "touch" })
+
+    await sleep(100)
+    expect(viewport().scrollLeft).toBe(0)
+  })
+
+  it("is off unless enabled", async () => {
+    await render(<Gallery />)
+
+    await drag(-200)
+
+    await sleep(100)
+    expect(viewport().scrollLeft).toBe(0)
   })
 })
 

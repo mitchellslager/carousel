@@ -52,15 +52,15 @@ Give `Root` an accessible name with `aria-label` or `aria-labelledby`. Every par
 
 ### Parts
 
-| Part           | Renders  | Notes                                                            |
-| -------------- | -------- | ---------------------------------------------------------------- |
-| `Root`         | `div`    | `index` / `defaultIndex` / `onIndexChange`, `labels`, `motion`.  |
-| `Viewport`     | `div`    | The scroll-snap container. Its `Slide` children are the slides.  |
-| `Slide`        | `div`    | `inert` unless active. `data-active` when active.                |
-| `Prev`, `Next` | `button` | `aria-disabled` and `data-disabled` at the edges. `render` prop. |
-| `Counter`      | `span`   | "3 / 10" by default; pass a function child to change it.         |
-| `Thumbnails`   | `div`    | Tab list; `orientation` is `"horizontal"` or `"vertical"`.       |
-| `Thumbnail`    | `button` | Tab for slide `index`. `data-active` when active. `render` prop. |
+| Part           | Renders  | Notes                                                                        |
+| -------------- | -------- | ---------------------------------------------------------------------------- |
+| `Root`         | `div`    | `index` / `defaultIndex` / `onIndexChange`, `labels`, `motion`, `mouseDrag`. |
+| `Viewport`     | `div`    | The scroll-snap container. Its `Slide` children are the slides.              |
+| `Slide`        | `div`    | `inert` unless active. `data-active` when active.                            |
+| `Prev`, `Next` | `button` | `aria-disabled` and `data-disabled` at the edges. `render` prop.             |
+| `Counter`      | `span`   | "3 / 10" by default; pass a function child to change it.                     |
+| `Thumbnails`   | `div`    | Tab list; `orientation` is `"horizontal"` or `"vertical"`.                   |
+| `Thumbnail`    | `button` | Tab for slide `index`. `data-active` when active. `render` prop.             |
 
 ### State
 
@@ -88,6 +88,16 @@ All accessible text is English by default. Translate it with `labels`:
 ### Motion
 
 The carousel scrolls smoothly, and jumps instead when the user prefers reduced motion. Pass `motion="reduce"` to always jump.
+
+### Mouse dragging
+
+Touch, trackpads and wheels scroll the carousel natively, but browsers do not let a mouse drag a scroll container. Pass `mouseDrag` to add that:
+
+```tsx
+<Carousel.Root aria-label="Product images" mouseDrag>
+```
+
+A quick flick moves on to the next slide; a slow drag lands on the nearest one. Clicks still work, and the click that ends a drag does not open a link in the slide. The base styles show a `grab` cursor, which you can override on `[data-carousel-viewport][data-mouse-drag]`.
 
 ### Custom elements
 
