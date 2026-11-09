@@ -1,7 +1,7 @@
 import { Carousel } from "@mitchellslager/carousel"
 import { useState } from "react"
 
-const SETS = { seven: 7, four: 4 } as const
+const SETS = { ten: 10, four: 4 } as const
 type SetName = keyof typeof SETS
 
 const range = (count: number) => Array.from({ length: count }, (_, i) => i)
@@ -93,7 +93,7 @@ function Gallery({
 }
 
 function ControlledExample() {
-  const [set, setSet] = useState<SetName>("seven")
+  const [set, setSet] = useState<SetName>("ten")
   const [index, setIndex] = useState(0)
   const [log, setLog] = useState<number[]>([])
   const count = SETS[set]
@@ -211,7 +211,7 @@ export function App() {
         title="Thumbnails"
         description="Thumbnails form a tab list that follows the carousel and keeps the active one in view."
       >
-        <Gallery aria-label="Thumbnails" count={7} motion={motion} />
+        <Gallery aria-label="Thumbnails" count={10} motion={motion} />
       </Section>
 
       <Section
@@ -220,7 +220,7 @@ export function App() {
       >
         <Gallery
           aria-label="Vertical thumbnails"
-          count={7}
+          count={10}
           orientation="vertical"
           defaultIndex={2}
           motion={motion}
