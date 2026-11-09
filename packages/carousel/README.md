@@ -97,7 +97,7 @@ Touch, trackpads and wheels scroll the carousel natively, but browsers do not le
 <Carousel.Root aria-label="Product images" mouseDrag>
 ```
 
-A quick flick moves on to the next slide; a slow drag lands on the nearest one. Clicks still work, and the click that ends a drag does not open a link in the slide. The base styles show a `grab` cursor, which you can override on `[data-carousel-viewport][data-mouse-drag]`.
+A quick flick moves on to the next slide; a slow drag lands on the nearest one. Clicks still work, and the click that ends a drag does not open a link in the slide. The viewport gets `data-mouse-drag`, and `data-dragging` while a drag is in progress, for example to style the cursor.
 
 ### Custom elements
 

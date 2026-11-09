@@ -90,7 +90,7 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 - The drag lives in `src/core/mouse-drag.ts`, apart from the React components. While dragging it turns snapping off and moves `scrollLeft` with the pointer. On release it scrolls smoothly (or instantly, with reduced motion) to the slide nearest the centre, or on to the neighbouring slide after a flick of at least 0.4 px/ms, and turns snapping back on once it rests there.
 - The scroll tracker is suspended from the first move until the landing ends, so a pause mid-drag does not settle and `onIndexChange` reports only where the drag lands. The active index, counter and thumbnails still follow live.
 - A press becomes a drag after 5 px, so clicks keep working. The click that ends a drag is swallowed, so a link in a slide does not open, and native dragging of images and links is prevented.
-- `styles.css` shows a `grab` cursor on a draggable viewport and `grabbing` while dragging, with text selection off.
+- `styles.css` only turns text selection off while dragging. It sets no cursor: that is visual styling, which consumers can add on `data-mouse-drag` and `data-dragging`.
 
 ## Styling
 

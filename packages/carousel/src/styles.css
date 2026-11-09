@@ -17,13 +17,8 @@
     display: none;
   }
 
-  /* Set by the mouseDrag option. */
-  [data-carousel-viewport][data-mouse-drag] {
-    cursor: grab;
-  }
-
+  /* Set by the mouseDrag option while a mouse drags the slides. */
   [data-carousel-viewport][data-dragging] {
-    cursor: grabbing;
     user-select: none;
   }
 
