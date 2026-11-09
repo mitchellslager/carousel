@@ -8,7 +8,7 @@
 /** Differences below one pixel are rounding, not a position to move to. */
 const TOLERANCE = 1
 
-function horizontalCentre(element: Element) {
+export function horizontalCentre(element: Element): number {
   const rect = element.getBoundingClientRect()
   return rect.left + rect.width / 2
 }

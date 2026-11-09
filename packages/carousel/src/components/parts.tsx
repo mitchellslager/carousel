@@ -9,6 +9,7 @@ import {
 } from "react"
 
 import { scrollIntoCentreWithin } from "../core/geometry"
+import { createMouseScroll } from "../core/mouse-drag"
 import { useCarouselContext } from "./context"
 import {
   mergeProps,
@@ -183,14 +184,27 @@ const PREVIOUS_KEYS = {
  */
 export function Thumbnails({
   orientation = "horizontal",
+  ref,
   ...props
 }: ThumbnailsProps): ReactElement {
-  const { labels, setHasThumbnails } = useCarouselContext("Thumbnails")
+  const { labels, setHasThumbnails, mouseDrag } =
+    useCarouselContext("Thumbnails")
+  const [element, setElement] = useState<HTMLDivElement | null>(null)
+  const mergedRef = useMergedRefs(setElement, ref)
 
   useEffect(() => {
     setHasThumbnails(true)
     return () => setHasThumbnails(false)
   }, [setHasThumbnails])
+
+  useEffect(() => {
+    if (!element || !mouseDrag) return
+    const drag = createMouseScroll(
+      element,
+      orientation === "vertical" ? "y" : "x"
+    )
+    return () => drag.destroy()
+  }, [element, mouseDrag, orientation])
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const list = event.currentTarget
@@ -229,6 +243,7 @@ export function Thumbnails({
       "data-carousel-thumbnails": "",
       "data-orientation": orientation,
       onKeyDown: handleKeyDown,
+      ref: mergedRef,
     },
     props
   )

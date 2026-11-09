@@ -14,6 +14,7 @@ In scope for v1:
 - WAI-ARIA carousel pattern, translatable labels.
 - `prefers-reduced-motion`.
 - Right-to-left layouts.
+- Mouse dragging, opt-in (see below).
 
 Out of scope for v1: autoplay, loop or rewind, several slides per view, a vertical main carousel, and image handling (lazy loading or preloading). Consumers bring their own `<img loading="lazy">` or `next/image`.
 
@@ -83,6 +84,15 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 - Programmatic scrolls read the same media query through `matchMedia` and follow changes to it.
 - A `motion` prop (`"auto" | "reduce"`) lets an app force reduced motion. Nothing ever forces animation when the user asked for reduced motion.
 
+## Mouse dragging
+
+- Browsers scroll the viewport with touch, trackpads, wheels and the keyboard, but a mouse cannot drag a scroll container. `mouseDrag` on `Root` adds that, for mouse pointers only; touch and pens keep native scrolling. It is opt-in, because a library built on native scrolling should not change how the mouse behaves unless asked.
+- The same option makes the thumbnail strip draggable along its orientation. The strip scrolls freely, without snapping, and dragging it never changes the slide.
+- The drag lives in `src/core/mouse-drag.ts`, apart from the React components: a shared base turns presses into drags, with a variant for the viewport and one for the strip. While dragging it turns snapping off and moves `scrollLeft` with the pointer. On release it scrolls smoothly (or instantly, with reduced motion) to the slide nearest the centre, or on to the neighbouring slide after a flick of at least 0.4 px/ms, and turns snapping back on once it rests there.
+- The scroll tracker is suspended from the first move until the landing ends, so a pause mid-drag does not settle and `onIndexChange` reports only where the drag lands. The active index, counter and thumbnails still follow live.
+- A press becomes a drag after 5 px, so clicks keep working. The click that ends a drag is swallowed, so a link in a slide does not open and a thumbnail is not selected, and native dragging of images and links is prevented.
+- `styles.css` only turns text selection off while dragging. It sets no cursor: that is visual styling, which consumers can add on `data-mouse-drag` and `data-dragging`.
+
 ## Styling
 
 - The package is headless. It ships `styles.css` with only the functional base (layout, snapping, hidden scrollbar, reduced motion) inside `@layer carousel`, so any unlayered consumer style wins.
@@ -98,5 +108,5 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 - TypeScript `strict` with `noUncheckedIndexedAccess`.
 - oxlint (including `jsx-a11y`) and Prettier.
 - Tests run in Vitest browser mode with Playwright, because scroll snapping needs a real layout engine: Chromium locally, Chromium, Firefox and WebKit in CI.
-- `publint`, `@arethetypeswrong/cli` and `size-limit` (4 kB for the JavaScript, minified and brotlied, React excluded) run in CI.
+- `publint`, `@arethetypeswrong/cli` and `size-limit` (10 kB for the JavaScript, minified and brotlied, React excluded) run in CI.
 - Changesets for versions and the changelog; npm trusted publishing with provenance from GitHub Actions.

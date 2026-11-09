@@ -17,6 +17,11 @@
     display: none;
   }
 
+  /* Set by the mouseDrag option while a mouse drags. */
+  :is([data-carousel-viewport], [data-carousel-thumbnails])[data-dragging] {
+    user-select: none;
+  }
+
   [data-carousel-slide] {
     flex: 0 0 100%;
     min-width: 0;
