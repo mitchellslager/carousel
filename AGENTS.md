@@ -19,6 +19,7 @@ Write every commit message as a [Conventional Commit](https://www.conventionalco
 - Scroll position is the source of truth for the active slide. Components scroll the viewport; they never set the active index directly.
 - The package ships only functional CSS, in `@layer carousel`. Visual styling belongs to consumers, through `data-*` attributes.
 - No runtime dependencies besides React.
+- Every export has an explicit type. Declarations are emitted with oxc, which needs `isolatedDeclarations`-compatible code; `pnpm build` fails otherwise.
 
 ## Tests
 

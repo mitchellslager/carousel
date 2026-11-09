@@ -8,6 +8,7 @@ import {
   useState,
   type ComponentProps,
   type CSSProperties,
+  type ReactElement,
 } from "react"
 
 import { scrollSlideIntoCentre } from "../core/geometry"
@@ -71,7 +72,7 @@ export function Root({
   motion = "auto",
   children,
   ...props
-}: RootProps) {
+}: RootProps): ReactElement {
   const baseId = useId()
   const [initialIndex] = useState(() => index ?? defaultIndex)
   const [viewport, setViewport] = useState<HTMLElement | null>(null)
