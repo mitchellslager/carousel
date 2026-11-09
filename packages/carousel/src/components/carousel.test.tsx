@@ -233,6 +233,23 @@ describe("navigation", () => {
     await expect.poll(() => onIndexChange.mock.lastCall).toEqual([4])
   })
 
+  it("keeps the active slide aligned when the viewport resizes", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(<Gallery onIndexChange={onIndexChange} />)
+    swipeTo(2)
+    await expect.poll(() => onIndexChange.mock.calls).toEqual([[2]])
+
+    const root = viewport().closest<HTMLElement>("[data-carousel-root]")!
+    for (const width of [200, 450, 260]) {
+      root.style.width = `${width}px`
+      await expect.poll(() => viewport().scrollLeft).toBe(2 * width)
+    }
+
+    await expect.element(counter()).toHaveTextContent("3 / 5")
+    await sleep(200)
+    expect(onIndexChange.mock.calls).toEqual([[2]])
+  })
+
   it("clamps when slides are removed", async () => {
     const screen = await render(<Gallery defaultIndex={4} />)
     await expect.element(counter()).toHaveTextContent("5 / 5")
@@ -267,6 +284,26 @@ describe("thumbnails", () => {
       .element(page.getByRole("tab", { name: "Slide 3" }))
       .toHaveAttribute("aria-selected", "true")
     await expect.poll(() => onIndexChange.mock.calls).toEqual([[2]])
+  })
+
+  it("centres the active thumbnail in the strip", async () => {
+    await render(<Gallery thumbnails="horizontal" />)
+
+    swipeTo(2)
+
+    await expect.element(tab(3)).toHaveAttribute("aria-selected", "true")
+    // Thumbnails are 40px wide in a 100px strip: the third one's centre is
+    // at 100px, so the strip scrolls 50px to centre it.
+    const strip = page.getByTestId("thumbnails").element() as HTMLElement
+    await expect.poll(() => strip.scrollLeft).toBe(50)
+  })
+
+  it("starts with the active thumbnail centred, without animating", async () => {
+    await render(<Gallery thumbnails="horizontal" defaultIndex={2} />)
+
+    await expect.element(counter()).toHaveTextContent("3 / 5")
+    const strip = page.getByTestId("thumbnails").element() as HTMLElement
+    expect(strip.scrollLeft).toBe(50)
   })
 
   it("follows the carousel and keeps the active thumbnail in view", async () => {

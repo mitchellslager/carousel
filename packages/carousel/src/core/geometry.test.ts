@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 
-import { scrollIntoViewWithin } from "./geometry"
+import { scrollIntoCentreWithin } from "./geometry"
 
 function createStrip(direction: "row" | "column") {
   const strip = document.createElement("div")
@@ -24,15 +24,13 @@ function createStrip(direction: "row" | "column") {
   return { strip, items }
 }
 
-function isFullyVisible(container: HTMLElement, element: HTMLElement) {
+function centreOffset(container: HTMLElement, element: HTMLElement) {
   const outer = container.getBoundingClientRect()
   const inner = element.getBoundingClientRect()
-  return (
-    inner.left >= outer.left - 1 &&
-    inner.right <= outer.right + 1 &&
-    inner.top >= outer.top - 1 &&
-    inner.bottom <= outer.bottom + 1
-  )
+  return {
+    x: inner.left + inner.width / 2 - (outer.left + outer.width / 2),
+    y: inner.top + inner.height / 2 - (outer.top + outer.height / 2),
+  }
 }
 
 afterEach(() => {
@@ -40,40 +38,41 @@ afterEach(() => {
   window.scrollTo(0, 0)
 })
 
-describe("scrollIntoViewWithin", () => {
-  it("scrolls a horizontal strip, not the page", () => {
+describe("scrollIntoCentreWithin", () => {
+  it("centres an item in a horizontal strip, not the page", () => {
     const { strip, items } = createStrip("row")
-    const last = items[9]!
 
-    scrollIntoViewWithin(strip, last, "instant")
+    scrollIntoCentreWithin(strip, items[5]!, "instant")
 
-    expect(isFullyVisible(strip, last)).toBe(true)
+    expect(Math.abs(centreOffset(strip, items[5]!).x)).toBeLessThan(1)
     expect(window.scrollY).toBe(0)
   })
 
-  it("scrolls a vertical strip", () => {
+  it("centres an item in a vertical strip", () => {
     const { strip, items } = createStrip("column")
-    const last = items[9]!
 
-    scrollIntoViewWithin(strip, last, "instant")
+    scrollIntoCentreWithin(strip, items[5]!, "instant")
 
-    expect(isFullyVisible(strip, last)).toBe(true)
+    expect(Math.abs(centreOffset(strip, items[5]!).y)).toBeLessThan(1)
   })
 
-  it("scrolls back to an item before the visible part", () => {
+  it("centres an item before the visible part", () => {
     const { strip, items } = createStrip("row")
-    strip.scrollLeft = 400
+    strip.scrollLeft = 300
 
-    scrollIntoViewWithin(strip, items[0]!, "instant")
+    scrollIntoCentreWithin(strip, items[3]!, "instant")
 
-    expect(strip.scrollLeft).toBe(0)
+    expect(Math.abs(centreOffset(strip, items[3]!).x)).toBeLessThan(1)
   })
 
-  it("leaves a visible item alone", () => {
+  it("stops at the start and end when an item cannot be centred", () => {
     const { strip, items } = createStrip("row")
+    strip.scrollLeft = 200
 
-    scrollIntoViewWithin(strip, items[1]!, "instant")
-
+    scrollIntoCentreWithin(strip, items[0]!, "instant")
     expect(strip.scrollLeft).toBe(0)
+
+    scrollIntoCentreWithin(strip, items[9]!, "instant")
+    expect(strip.scrollLeft).toBe(strip.scrollWidth - strip.clientWidth)
   })
 })
