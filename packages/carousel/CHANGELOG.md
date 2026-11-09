@@ -1,5 +1,11 @@
 # @mitchellslager/carousel
 
+## 0.1.1
+
+### Patch Changes
+
+- [#6](https://github.com/mitchellslager/carousel/pull/6) [`7952600`](https://github.com/mitchellslager/carousel/commit/79526001e4c7d447a6b8f6cdb3b38e89128e80bc) Thanks [@mitchellslager](https://github.com/mitchellslager)! - Declare every component's return type as `ReactElement`, and link the demo and issue tracker from npm.
+
 ## 0.1.0
 
 ### Minor Changes
