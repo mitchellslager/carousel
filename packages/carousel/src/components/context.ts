@@ -20,6 +20,8 @@ export interface CarouselContextValue {
   goTo: (index: number, source: ChangeSource) => void
   /** The scroll behaviour to use, following the motion preference. */
   behavior: ScrollBehavior
+  /** Whether a mouse may drag the slides and the thumbnail strip. */
+  mouseDrag: boolean
   labels: CarouselLabels
   ids: {
     root: string

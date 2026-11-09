@@ -1,14 +1,18 @@
 /**
- * Mouse dragging for a scroll-snap viewport.
+ * Mouse dragging for scroll containers.
  *
  * Browsers scroll a scroll container with touch, a trackpad, a wheel or the
  * keyboard, but not by dragging it with a mouse. This adds that, for mouse
  * pointers only: touch and pens keep the browser's native scrolling.
  *
- * While dragging, snapping is turned off and the viewport follows the
- * pointer. On release it scrolls to the slide nearest the centre, or on to the
- * next one after a quick flick, and turns snapping back on once it rests
- * there. The scroll position stays the source of truth throughout.
+ * - `createMouseDrag` drags the slide viewport: snapping is off while
+ *   dragging, and on release it lands on the slide nearest the centre, or on
+ *   the next one after a quick flick.
+ * - `createMouseScroll` drags a freely scrolling container, such as the
+ *   thumbnail strip, along one axis.
+ *
+ * Both turn a press into a drag only after a few pixels, so clicks keep
+ * working, and swallow the click that ends a drag.
  */
 
 import {
@@ -17,17 +21,6 @@ import {
   isCentred,
   scrollSlideIntoCentre,
 } from "./geometry"
-
-export interface MouseDragOptions {
-  /** Returns the slides in DOM order. */
-  getSlides: () => readonly HTMLElement[]
-  /** The scroll behaviour for landing on a slide. Read on release. */
-  getBehavior: () => ScrollBehavior
-  /** Called when a press turns into a drag. */
-  onDragStart?: () => void
-  /** Called once the viewport rests on a slide again after a drag. */
-  onDragEnd?: () => void
-}
 
 export interface MouseDrag {
   destroy(): void
@@ -42,27 +35,137 @@ const SPEED_WINDOW = 100
 /** Milliseconds without scrolling after which a landing counts as done. */
 const LANDING_TIMEOUT = 1000
 
-interface Press {
-  pointerId: number
-  x: number
-  scrollLeft: number
+type Axis = "x" | "y"
+
+interface DragHandlers {
+  /** A press has turned into a drag. */
+  onStart(): void
+  /** The pointer moved `distance` pixels along the axis since the press. */
+  onMove(distance: number): void
+  /** The drag ended, with the pointer's speed along the axis in px/ms. */
+  onEnd(speed: number): void
 }
 
+/**
+ * Turns mouse presses on `element` into drags along `axis`, and reports
+ * them to `handlers`. Sets `data-dragging` while dragging.
+ */
+function trackMouseDrag(
+  element: HTMLElement,
+  axis: Axis,
+  handlers: DragHandlers
+): () => void {
+  let press: { pointerId: number; position: number } | null = null
+  let dragging = false
+  let samples: { position: number; time: number }[] = []
+
+  const positionOf = (event: PointerEvent) =>
+    axis === "x" ? event.clientX : event.clientY
+
+  /** The pointer's speed over the last moments; positive is right or down. */
+  function speedAt(time: number) {
+    const recent = samples.filter(
+      (sample) => time - sample.time <= SPEED_WINDOW
+    )
+    const first = recent[0]
+    const last = recent[recent.length - 1]
+    if (!first || !last || last.time === first.time) return 0
+    return (last.position - first.position) / (last.time - first.time)
+  }
+
+  function swallowClick(event: Event) {
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  function handlePointerDown(event: PointerEvent) {
+    if (event.pointerType !== "mouse" || event.button !== 0) return
+    press = { pointerId: event.pointerId, position: positionOf(event) }
+    samples = [{ position: positionOf(event), time: event.timeStamp }]
+  }
+
+  function handlePointerMove(event: PointerEvent) {
+    if (!press || event.pointerId !== press.pointerId) return
+    const distance = positionOf(event) - press.position
+    if (!dragging) {
+      if (Math.abs(distance) < DRAG_THRESHOLD) return
+      dragging = true
+      try {
+        element.setPointerCapture(event.pointerId)
+      } catch {
+        // Synthetic events have no active pointer to capture.
+      }
+      element.setAttribute("data-dragging", "")
+      getSelection()?.removeAllRanges()
+      handlers.onStart()
+    }
+    samples.push({ position: positionOf(event), time: event.timeStamp })
+    handlers.onMove(distance)
+  }
+
+  function handlePointerUp(event: PointerEvent) {
+    if (!press || event.pointerId !== press.pointerId) return
+    press = null
+    if (!dragging) return
+    dragging = false
+    samples.push({ position: positionOf(event), time: event.timeStamp })
+    element.removeAttribute("data-dragging")
+    // The click that ends a drag is not a click on what was under the mouse.
+    element.addEventListener("click", swallowClick, { capture: true })
+    setTimeout(() =>
+      element.removeEventListener("click", swallowClick, { capture: true })
+    )
+    handlers.onEnd(
+      event.type === "pointercancel" ? 0 : speedAt(event.timeStamp)
+    )
+  }
+
+  function preventNativeDrag(event: DragEvent) {
+    event.preventDefault()
+  }
+
+  element.setAttribute("data-mouse-drag", "")
+  element.addEventListener("pointerdown", handlePointerDown)
+  element.addEventListener("pointermove", handlePointerMove)
+  element.addEventListener("pointerup", handlePointerUp)
+  element.addEventListener("pointercancel", handlePointerUp)
+  element.addEventListener("dragstart", preventNativeDrag)
+
+  return () => {
+    element.removeEventListener("pointerdown", handlePointerDown)
+    element.removeEventListener("pointermove", handlePointerMove)
+    element.removeEventListener("pointerup", handlePointerUp)
+    element.removeEventListener("pointercancel", handlePointerUp)
+    element.removeEventListener("dragstart", preventNativeDrag)
+    element.removeEventListener("click", swallowClick, { capture: true })
+    element.removeAttribute("data-mouse-drag")
+    element.removeAttribute("data-dragging")
+  }
+}
+
+export interface MouseDragOptions {
+  /** Returns the slides in DOM order. */
+  getSlides: () => readonly HTMLElement[]
+  /** The scroll behaviour for landing on a slide. Read on release. */
+  getBehavior: () => ScrollBehavior
+  /** Called when a press turns into a drag. */
+  onDragStart?: () => void
+  /** Called once the viewport rests on a slide again after a drag. */
+  onDragEnd?: () => void
+}
+
+/** Lets a mouse drag the slides of a horizontal scroll-snap viewport. */
 export function createMouseDrag(
   viewport: HTMLElement,
   options: MouseDragOptions
 ): MouseDrag {
   const { getSlides, getBehavior, onDragStart, onDragEnd } = options
 
-  let press: Press | null = null
-  let dragging = false
   // From the first drag until the viewport rests on a slide again.
   let active = false
+  let startScroll = 0
   let startIndex = -1
-  let samples: { x: number; time: number }[] = []
   let landing: { target: HTMLElement; timer: number } | null = null
-
-  viewport.setAttribute("data-mouse-drag", "")
 
   function stopLanding() {
     if (!landing) return
@@ -90,35 +193,7 @@ export function createMouseDrag(
     landing.timer = window.setTimeout(finish, LANDING_TIMEOUT)
   }
 
-  function startDrag(pointerId: number) {
-    dragging = true
-    stopLanding()
-    if (!active) {
-      active = true
-      onDragStart?.()
-    }
-    startIndex = findNearestSlide(viewport, getSlides())
-    try {
-      viewport.setPointerCapture(pointerId)
-    } catch {
-      // Synthetic events have no active pointer to capture.
-    }
-    viewport.setAttribute("data-dragging", "")
-    viewport.style.setProperty("scroll-snap-type", "none")
-    getSelection()?.removeAllRanges()
-  }
-
-  /** The pointer's speed in px/ms over the last moments; positive is rightwards. */
-  function releaseSpeed(time: number) {
-    const recent = samples.filter(
-      (sample) => time - sample.time <= SPEED_WINDOW
-    )
-    const first = recent[0]
-    const last = recent[recent.length - 1]
-    if (!first || !last || last.time === first.time) return 0
-    return (last.x - first.x) / (last.time - first.time)
-  }
-
+  /** Lands on the nearest slide, or its neighbour after a flick. */
   function land(speed: number) {
     const slides = getSlides()
     let index = findNearestSlide(viewport, slides)
@@ -140,78 +215,55 @@ export function createMouseDrag(
       finish()
       return
     }
-    landing = {
-      target,
-      timer: window.setTimeout(finish, LANDING_TIMEOUT),
-    }
+    landing = { target, timer: window.setTimeout(finish, LANDING_TIMEOUT) }
     viewport.addEventListener("scroll", handleLandingScroll, { passive: true })
   }
 
-  function swallowClick(event: Event) {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
-  function handlePointerDown(event: PointerEvent) {
-    if (event.pointerType !== "mouse" || event.button !== 0) return
-    press = {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      scrollLeft: viewport.scrollLeft,
-    }
-    samples = [{ x: event.clientX, time: event.timeStamp }]
-  }
-
-  function handlePointerMove(event: PointerEvent) {
-    if (!press || event.pointerId !== press.pointerId) return
-    const distance = event.clientX - press.x
-    if (!dragging) {
-      if (Math.abs(distance) < DRAG_THRESHOLD) return
-      startDrag(event.pointerId)
-    }
-    samples.push({ x: event.clientX, time: event.timeStamp })
-    viewport.scrollTo({
-      left: press.scrollLeft - distance,
-      behavior: "instant",
-    })
-  }
-
-  function handlePointerUp(event: PointerEvent) {
-    if (!press || event.pointerId !== press.pointerId) return
-    press = null
-    if (!dragging) return
-    dragging = false
-    samples.push({ x: event.clientX, time: event.timeStamp })
-    viewport.removeAttribute("data-dragging")
-    // The click that ends a drag is not a click on what was under the mouse.
-    viewport.addEventListener("click", swallowClick, { capture: true })
-    setTimeout(() =>
-      viewport.removeEventListener("click", swallowClick, { capture: true })
-    )
-    land(event.type === "pointercancel" ? 0 : releaseSpeed(event.timeStamp))
-  }
-
-  function preventNativeDrag(event: DragEvent) {
-    event.preventDefault()
-  }
-
-  viewport.addEventListener("pointerdown", handlePointerDown)
-  viewport.addEventListener("pointermove", handlePointerMove)
-  viewport.addEventListener("pointerup", handlePointerUp)
-  viewport.addEventListener("pointercancel", handlePointerUp)
-  viewport.addEventListener("dragstart", preventNativeDrag)
+  const untrack = trackMouseDrag(viewport, "x", {
+    onStart() {
+      stopLanding()
+      if (!active) {
+        active = true
+        onDragStart?.()
+      }
+      startScroll = viewport.scrollLeft
+      startIndex = findNearestSlide(viewport, getSlides())
+      viewport.style.setProperty("scroll-snap-type", "none")
+    },
+    onMove(distance) {
+      viewport.scrollTo({ left: startScroll - distance, behavior: "instant" })
+    },
+    onEnd: land,
+  })
 
   return {
     destroy() {
-      viewport.removeEventListener("pointerdown", handlePointerDown)
-      viewport.removeEventListener("pointermove", handlePointerMove)
-      viewport.removeEventListener("pointerup", handlePointerUp)
-      viewport.removeEventListener("pointercancel", handlePointerUp)
-      viewport.removeEventListener("dragstart", preventNativeDrag)
-      viewport.removeEventListener("click", swallowClick, { capture: true })
-      viewport.removeAttribute("data-mouse-drag")
-      viewport.removeAttribute("data-dragging")
+      untrack()
       finish()
     },
   }
+}
+
+/**
+ * Lets a mouse drag a freely scrolling container, such as the thumbnail
+ * strip, along `axis`.
+ */
+export function createMouseScroll(
+  container: HTMLElement,
+  axis: Axis
+): MouseDrag {
+  let start = 0
+  const untrack = trackMouseDrag(container, axis, {
+    onStart() {
+      start = axis === "x" ? container.scrollLeft : container.scrollTop
+    },
+    onMove(distance) {
+      container.scrollTo({
+        [axis === "x" ? "left" : "top"]: start - distance,
+        behavior: "instant",
+      })
+    },
+    onEnd() {},
+  })
+  return { destroy: untrack }
 }

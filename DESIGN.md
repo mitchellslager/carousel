@@ -87,9 +87,10 @@ Follows the WAI-ARIA Authoring Practices carousel pattern.
 ## Mouse dragging
 
 - Browsers scroll the viewport with touch, trackpads, wheels and the keyboard, but a mouse cannot drag a scroll container. `mouseDrag` on `Root` adds that, for mouse pointers only; touch and pens keep native scrolling. It is opt-in, because a library built on native scrolling should not change how the mouse behaves unless asked.
-- The drag lives in `src/core/mouse-drag.ts`, apart from the React components. While dragging it turns snapping off and moves `scrollLeft` with the pointer. On release it scrolls smoothly (or instantly, with reduced motion) to the slide nearest the centre, or on to the neighbouring slide after a flick of at least 0.4 px/ms, and turns snapping back on once it rests there.
+- The same option makes the thumbnail strip draggable along its orientation. The strip scrolls freely, without snapping, and dragging it never changes the slide.
+- The drag lives in `src/core/mouse-drag.ts`, apart from the React components: a shared base turns presses into drags, with a variant for the viewport and one for the strip. While dragging it turns snapping off and moves `scrollLeft` with the pointer. On release it scrolls smoothly (or instantly, with reduced motion) to the slide nearest the centre, or on to the neighbouring slide after a flick of at least 0.4 px/ms, and turns snapping back on once it rests there.
 - The scroll tracker is suspended from the first move until the landing ends, so a pause mid-drag does not settle and `onIndexChange` reports only where the drag lands. The active index, counter and thumbnails still follow live.
-- A press becomes a drag after 5 px, so clicks keep working. The click that ends a drag is swallowed, so a link in a slide does not open, and native dragging of images and links is prevented.
+- A press becomes a drag after 5 px, so clicks keep working. The click that ends a drag is swallowed, so a link in a slide does not open and a thumbnail is not selected, and native dragging of images and links is prevented.
 - `styles.css` only turns text selection off while dragging. It sets no cursor: that is visual styling, which consumers can add on `data-mouse-drag` and `data-dragging`.
 
 ## Styling

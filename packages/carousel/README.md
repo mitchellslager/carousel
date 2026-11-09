@@ -91,13 +91,13 @@ The carousel scrolls smoothly, and jumps instead when the user prefers reduced m
 
 ### Mouse dragging
 
-Touch, trackpads and wheels scroll the carousel natively, but browsers do not let a mouse drag a scroll container. Pass `mouseDrag` to add that:
+Touch, trackpads and wheels scroll the carousel natively, but browsers do not let a mouse drag a scroll container. Pass `mouseDrag` to add that, for the slides and the thumbnail strip:
 
 ```tsx
 <Carousel.Root aria-label="Product images" mouseDrag>
 ```
 
-A quick flick moves on to the next slide; a slow drag lands on the nearest one. Clicks still work, and the click that ends a drag does not open a link in the slide. The viewport gets `data-mouse-drag`, and `data-dragging` while a drag is in progress, for example to style the cursor.
+A quick flick moves on to the next slide; a slow drag lands on the nearest one. The thumbnail strip scrolls freely and does not change the slide. Clicks still work, and the click that ends a drag does not select a thumbnail or open a link in a slide. The viewport and the strip get `data-mouse-drag`, and `data-dragging` while a drag is in progress, for example to style the cursor.
 
 ### Custom elements
 

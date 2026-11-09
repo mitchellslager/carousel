@@ -116,6 +116,34 @@ async function drag(
   pointer("pointerup", start + distance, pointerType)
 }
 
+/** Drags `element` with a mouse by `dx` and `dy` pixels, then releases. */
+async function dragElement(element: HTMLElement, dx: number, dy: number) {
+  const rect = element.getBoundingClientRect()
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  const send = (type: string, step: number) =>
+    element.dispatchEvent(
+      new PointerEvent(type, {
+        pointerId: 1,
+        pointerType: "mouse",
+        button: 0,
+        buttons: type === "pointerup" ? 0 : 1,
+        clientX: x + dx * step,
+        clientY: y + dy * step,
+        bubbles: true,
+        cancelable: true,
+      })
+    )
+  send("pointerdown", 0)
+  for (let step = 1; step <= 5; step++) {
+    send("pointermove", step / 5)
+    await sleep(16)
+  }
+  send("pointerup", 1)
+}
+
+const strip = () => page.getByTestId("thumbnails").element() as HTMLElement
+
 afterEach(() => {
   document.dir = "ltr"
 })
@@ -492,12 +520,52 @@ describe("mouse drag", () => {
   })
 
   it("is off unless enabled", async () => {
-    await render(<Gallery />)
+    await render(<Gallery thumbnails="horizontal" />)
 
     await drag(-200)
+    await dragElement(strip(), -60, 0)
 
     await sleep(100)
     expect(viewport().scrollLeft).toBe(0)
+    expect(strip().scrollLeft).toBe(0)
+  })
+
+  it("drags the thumbnail strip without changing slides", async () => {
+    const onIndexChange = vi.fn<(index: number) => void>()
+    await render(
+      <Gallery
+        thumbnails="horizontal"
+        mouseDrag
+        onIndexChange={onIndexChange}
+      />
+    )
+
+    await dragElement(strip(), -60, 0)
+    // The click that ends the drag must not select the thumbnail under it.
+    tab(2)
+      .element()
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }))
+
+    expect(strip().scrollLeft).toBe(60)
+    await sleep(200)
+    await expect.element(counter()).toHaveTextContent("1 / 5")
+    expect(onIndexChange).not.toHaveBeenCalled()
+  })
+
+  it("drags a vertical thumbnail strip up and down", async () => {
+    await render(<Gallery thumbnails="vertical" mouseDrag />)
+
+    await dragElement(strip(), 0, -60)
+
+    expect(strip().scrollTop).toBe(60)
+  })
+
+  it("still selects a thumbnail with a plain click", async () => {
+    await render(<Gallery thumbnails="horizontal" mouseDrag />)
+
+    await tab(3).click()
+
+    await expect.element(counter()).toHaveTextContent("3 / 5")
   })
 })
 

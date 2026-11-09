@@ -41,8 +41,9 @@ export interface RootProps extends Omit<ComponentProps<"div">, "onChange"> {
    */
   motion?: "auto" | "reduce"
   /**
-   * Lets a mouse drag the slides, like a finger swipe. Touch, trackpads and
-   * wheels scroll natively either way; browsers have no mouse dragging.
+   * Lets a mouse drag the slides, like a finger swipe, and the thumbnail
+   * strip. Touch, trackpads and wheels scroll natively either way; browsers
+   * have no mouse dragging.
    */
   mouseDrag?: boolean
 }
@@ -194,6 +195,7 @@ export function Root({
       setViewport,
       goTo,
       behavior,
+      mouseDrag,
       labels,
       ids: {
         root: baseId,
@@ -209,6 +211,7 @@ export function Root({
       hasThumbnails,
       goTo,
       behavior,
+      mouseDrag,
       labels,
       baseId,
     ]
