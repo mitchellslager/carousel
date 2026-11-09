@@ -1,156 +1,140 @@
 import { Carousel } from "@mitchellslager/carousel"
 import { useState } from "react"
 
-interface Picture {
-  label: string
-  hue: number
-}
+const SETS = { seven: 7, four: 4 } as const
+type SetName = keyof typeof SETS
 
-const VARIANTS: Record<string, Picture[]> = {
-  ocean: [
-    { label: "Front", hue: 200 },
-    { label: "Side", hue: 210 },
-    { label: "Back", hue: 220 },
-    { label: "Sole", hue: 190 },
-    { label: "Detail", hue: 230 },
-    { label: "Box", hue: 180 },
-    { label: "Worn", hue: 240 },
-  ],
-  ember: [
-    { label: "Front", hue: 10 },
-    { label: "Side", hue: 25 },
-    { label: "Back", hue: 40 },
-    { label: "Detail", hue: 0 },
-  ],
-}
+const range = (count: number) => Array.from({ length: count }, (_, i) => i)
 
-/** A placeholder product photo: an SVG gradient with a caption. */
-function pictureSource({ hue, label }: Picture) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-    <defs><linearGradient id="g" x2="1" y2="1">
-      <stop offset="0" stop-color="hsl(${hue} 70% 55%)"/>
-      <stop offset="1" stop-color="hsl(${hue + 40} 70% 35%)"/>
-    </linearGradient></defs>
-    <rect width="400" height="300" fill="url(#g)"/>
-    <text x="200" y="165" fill="white" font-family="system-ui" font-size="40"
-      font-weight="600" text-anchor="middle">${label}</text>
-  </svg>`
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`
-}
+const outline = "ring-1 ring-inset ring-neutral-300 dark:ring-neutral-700"
 
-function Artwork({
-  picture,
-  size,
-}: {
-  picture: Picture
-  size: "large" | "small"
-}) {
+function Arrow({ direction }: { direction: "previous" | "next" }) {
   return (
-    <img
-      src={pictureSource(picture)}
-      alt={size === "large" ? picture.label : ""}
-      draggable={false}
-      className={
-        size === "large"
-          ? "aspect-[4/3] w-full object-cover"
-          : "size-full object-cover"
-      }
-    />
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      // Mirror the arrows in right-to-left layouts, where "next" is leftwards.
+      className="size-4 rtl:-scale-x-100"
+    >
+      <path
+        d={direction === "previous" ? "M10 3 5 8l5 5" : "M6 3l5 5-5 5"}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
 
-const buttonClass =
-  "rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-neutral-900 shadow data-[disabled]:opacity-40"
+const buttonClass = `grid size-9 place-items-center rounded-full ${outline} transition hover:bg-neutral-100 data-[disabled]:opacity-30 data-[disabled]:hover:bg-transparent dark:hover:bg-neutral-900`
 
 function Gallery({
-  pictures,
+  count,
   orientation = "horizontal",
+  thumbnails = true,
   ...rootProps
 }: {
-  pictures: Picture[]
+  count: number
   orientation?: "horizontal" | "vertical"
+  thumbnails?: boolean
 } & Omit<Carousel.RootProps, "children">) {
-  const vertical = orientation === "vertical"
+  const vertical = thumbnails && orientation === "vertical"
   return (
     <Carousel.Root
-      className={
-        vertical ? "flex flex-row-reverse gap-3" : "flex flex-col gap-3"
-      }
+      className={`grid gap-3 ${vertical ? "grid-cols-[3.5rem_1fr]" : ""}`}
       {...rootProps}
     >
-      <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl">
-        <Carousel.Viewport>
-          {pictures.map((picture, i) => (
-            <Carousel.Slide key={i}>
-              <Artwork picture={picture} size="large" />
-            </Carousel.Slide>
-          ))}
-        </Carousel.Viewport>
-        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between">
-          <Carousel.Prev className={buttonClass}>←</Carousel.Prev>
-          <Carousel.Counter className="rounded-full bg-black/60 px-3 py-1 text-sm text-white tabular-nums" />
-          <Carousel.Next className={buttonClass}>→</Carousel.Next>
-        </div>
-      </div>
-      <Carousel.Thumbnails
-        orientation={orientation}
-        // Vertical: contain-size stops the strip from adding to the row's
-        // height, so it stretches to the slide's height and scrolls instead.
-        className={vertical ? "w-16 gap-2 contain-size" : "gap-2"}
-      >
-        {pictures.map((picture, i) => (
-          <Carousel.Thumbnail
+      <Carousel.Viewport className={vertical ? "col-start-2" : ""}>
+        {range(count).map((i) => (
+          <Carousel.Slide
             key={i}
-            index={i}
-            className="size-16 overflow-hidden rounded-lg opacity-60 ring-blue-600 transition focus-visible:outline-2 focus-visible:outline-offset-2 data-[active]:opacity-100 data-[active]:ring-2 data-[active]:ring-inset"
+            className={`grid aspect-video place-items-center rounded-2xl text-5xl font-semibold tabular-nums ${outline}`}
           >
-            <Artwork picture={picture} size="small" />
-          </Carousel.Thumbnail>
+            {i + 1}
+          </Carousel.Slide>
         ))}
-      </Carousel.Thumbnails>
+      </Carousel.Viewport>
+      <div
+        className={`flex items-center gap-2 ${vertical ? "col-start-2" : ""}`}
+      >
+        <Carousel.Prev className={buttonClass}>
+          <Arrow direction="previous" />
+        </Carousel.Prev>
+        <Carousel.Next className={buttonClass}>
+          <Arrow direction="next" />
+        </Carousel.Next>
+        <Carousel.Counter className="ms-auto text-sm text-neutral-500 tabular-nums" />
+      </div>
+      {thumbnails && (
+        <Carousel.Thumbnails
+          orientation={orientation}
+          // Vertical: the strip sits beside the slides. contain-size stops it
+          // from adding to the row's height, so it stretches to the slide's
+          // height and scrolls instead.
+          className={
+            vertical ? "col-start-1 row-start-1 gap-2 contain-size" : "gap-2"
+          }
+        >
+          {range(count).map((i) => (
+            <Carousel.Thumbnail
+              key={i}
+              index={i}
+              className={`size-14 rounded-xl font-medium text-neutral-500 tabular-nums transition ${outline} focus-visible:outline-2 focus-visible:outline-offset-2 data-[active]:text-neutral-900 data-[active]:ring-neutral-900 dark:data-[active]:text-white dark:data-[active]:ring-white`}
+            >
+              {i + 1}
+            </Carousel.Thumbnail>
+          ))}
+        </Carousel.Thumbnails>
+      )}
     </Carousel.Root>
   )
 }
 
 function ControlledExample() {
-  const [variant, setVariant] = useState<keyof typeof VARIANTS>("ocean")
+  const [set, setSet] = useState<SetName>("seven")
   const [index, setIndex] = useState(0)
   const [log, setLog] = useState<number[]>([])
-  const pictures = VARIANTS[variant]!
+  const count = SETS[set]
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {Object.keys(VARIANTS).map((name) => (
+        {(Object.keys(SETS) as SetName[]).map((name) => (
           <button
             key={name}
             type="button"
-            aria-pressed={variant === name}
+            aria-pressed={set === name}
             onClick={() => {
-              setVariant(name)
+              setSet(name)
               setIndex(0)
             }}
-            className="rounded-full border px-3 py-1 text-sm capitalize aria-pressed:bg-neutral-900 aria-pressed:text-white dark:aria-pressed:bg-white dark:aria-pressed:text-neutral-900"
+            className={`rounded-full px-3 py-1 text-sm ${outline} aria-pressed:bg-neutral-900 aria-pressed:text-white aria-pressed:ring-neutral-900 dark:aria-pressed:bg-white dark:aria-pressed:text-neutral-900 dark:aria-pressed:ring-white`}
           >
-            {name}
+            {SETS[name]} slides
           </button>
         ))}
-        {pictures.map((picture, i) => (
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {range(count).map((i) => (
           <button
             key={i}
             type="button"
             onClick={() => setIndex(i)}
-            className="rounded border px-2 py-1 text-sm"
+            aria-label={`Show slide ${i + 1}`}
+            className={`size-8 rounded-lg text-sm tabular-nums ${outline}`}
           >
-            Show {picture.label.toLowerCase()}
+            {i + 1}
           </button>
         ))}
       </div>
-      {/* `key` resets the carousel when the variant changes. */}
+      {/* `key` resets the carousel when the set changes. */}
       <Gallery
-        key={variant}
-        aria-label={`${variant} shoe`}
-        pictures={pictures}
+        key={set}
+        aria-label={`${count} slides`}
+        count={count}
+        thumbnails={false}
         index={index}
         onIndexChange={(next) => {
           setIndex(next)
@@ -227,11 +211,7 @@ export function App() {
         title="Thumbnails"
         description="Thumbnails form a tab list that follows the carousel and keeps the active one in view."
       >
-        <Gallery
-          aria-label="Ocean shoe"
-          pictures={VARIANTS.ocean!}
-          motion={motion}
-        />
+        <Gallery aria-label="Thumbnails" count={7} motion={motion} />
       </Section>
 
       <Section
@@ -239,8 +219,8 @@ export function App() {
         description="Up and down arrows move between thumbnails; it starts on the third slide."
       >
         <Gallery
-          aria-label="Ocean shoe, vertical"
-          pictures={VARIANTS.ocean!}
+          aria-label="Vertical thumbnails"
+          count={7}
           orientation="vertical"
           defaultIndex={2}
           motion={motion}
@@ -249,7 +229,7 @@ export function App() {
 
       <Section
         title="Controlled"
-        description="The parent requests a slide; swipes still win and report through onIndexChange. Switching variants resets the carousel."
+        description="The parent requests a slide; swipes still win and report through onIndexChange. Switching sets resets the carousel."
       >
         <ControlledExample />
       </Section>
