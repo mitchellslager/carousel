@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type ComponentProps,
   type KeyboardEvent,
@@ -7,7 +8,7 @@ import {
   type ReactNode,
 } from "react"
 
-import { scrollIntoViewWithin } from "../core/geometry"
+import { scrollIntoCentreWithin } from "../core/geometry"
 import { useCarouselContext } from "./context"
 import {
   mergeProps,
@@ -242,7 +243,7 @@ export interface ThumbnailProps extends ComponentProps<"button"> {
   render?: RenderProp
 }
 
-/** A tab that selects slide `index`. Keeps itself in view when active. */
+/** A tab that selects slide `index`. Centres itself in the strip when active. */
 export function Thumbnail({
   index,
   render,
@@ -254,11 +255,16 @@ export function Thumbnail({
   const [element, setElement] = useState<HTMLButtonElement | null>(null)
   const mergedRef = useMergedRefs(setElement, ref)
   const selected = index === activeIndex
+  const mountedElement = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
+    // On mount, jump straight to the active thumbnail, like the viewport
+    // jumps to the initial slide; after that, follow the motion preference.
+    const justMounted = mountedElement.current !== element
+    mountedElement.current = element
     const list = element?.closest<HTMLElement>("[data-carousel-thumbnails]")
     if (selected && element && list) {
-      scrollIntoViewWithin(list, element, behavior)
+      scrollIntoCentreWithin(list, element, justMounted ? "instant" : behavior)
     }
   }, [selected, element, behavior])
 

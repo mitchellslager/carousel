@@ -55,25 +55,21 @@ export function scrollSlideIntoCentre(
   return true
 }
 
-function overflow(start: number, end: number, min: number, max: number) {
-  if (start < min - TOLERANCE) return start - min
-  if (end > max + TOLERANCE) return end - max
-  return 0
-}
-
 /**
- * Scrolls `container` the least amount needed to show `element` completely,
- * like `scrollIntoView({ block: "nearest", inline: "nearest" })`, but without
- * scrolling any ancestor or the page.
+ * Scrolls `container` so `element` sits in its centre, on both axes, without
+ * scrolling any ancestor or the page. Near the start or end of the container
+ * the browser clamps the scroll position, so the element ends up as close to
+ * the centre as it can.
  */
-export function scrollIntoViewWithin(
+export function scrollIntoCentreWithin(
   container: HTMLElement,
   element: HTMLElement,
   behavior: ScrollBehavior
 ): void {
   const outer = container.getBoundingClientRect()
   const inner = element.getBoundingClientRect()
-  const left = overflow(inner.left, inner.right, outer.left, outer.right)
-  const top = overflow(inner.top, inner.bottom, outer.top, outer.bottom)
-  if (left || top) container.scrollBy({ left, top, behavior })
+  const left = inner.left + inner.width / 2 - (outer.left + outer.width / 2)
+  const top = inner.top + inner.height / 2 - (outer.top + outer.height / 2)
+  if (Math.abs(left) < TOLERANCE && Math.abs(top) < TOLERANCE) return
+  container.scrollBy({ left, top, behavior })
 }

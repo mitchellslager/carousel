@@ -269,6 +269,26 @@ describe("thumbnails", () => {
     await expect.poll(() => onIndexChange.mock.calls).toEqual([[2]])
   })
 
+  it("centres the active thumbnail in the strip", async () => {
+    await render(<Gallery thumbnails="horizontal" />)
+
+    swipeTo(2)
+
+    await expect.element(tab(3)).toHaveAttribute("aria-selected", "true")
+    // Thumbnails are 40px wide in a 100px strip: the third one's centre is
+    // at 100px, so the strip scrolls 50px to centre it.
+    const strip = page.getByTestId("thumbnails").element() as HTMLElement
+    await expect.poll(() => strip.scrollLeft).toBe(50)
+  })
+
+  it("starts with the active thumbnail centred, without animating", async () => {
+    await render(<Gallery thumbnails="horizontal" defaultIndex={2} />)
+
+    await expect.element(counter()).toHaveTextContent("3 / 5")
+    const strip = page.getByTestId("thumbnails").element() as HTMLElement
+    expect(strip.scrollLeft).toBe(50)
+  })
+
   it("follows the carousel and keeps the active thumbnail in view", async () => {
     await render(<Gallery thumbnails="horizontal" />)
 

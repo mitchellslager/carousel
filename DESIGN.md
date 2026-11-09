@@ -61,7 +61,7 @@ Compound components:
 ## Thumbnails
 
 - Content is supplied by the consumer and linked to a slide by `index`.
-- The strip scrolls itself and keeps the active thumbnail in view with `scrollIntoView({ block: "nearest", inline: "nearest" })`, without scrolling the page.
+- The strip scrolls itself and keeps the active thumbnail in its centre, or as close to it as the start and end of the strip allow, without scrolling the page. On mount it jumps there instantly, like the viewport does for the initial slide.
 - `orientation` is `"horizontal"` or `"vertical"` and decides which arrow keys move between thumbnails.
 
 ## Accessibility
