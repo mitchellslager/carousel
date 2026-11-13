@@ -70,12 +70,12 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitest/browser-playwright": "^5.1.0",
-    "playwright": "^1.64.1",
+    "playwright": "^1.65.0",
     "publint": "^0.3.25",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "size-limit": "^14.3.0",
-    "tsdown": "^0.23.5",
+    "tsdown": "^0.23.7",
     "vitest": "^5.1.0",
     "vitest-browser-react": "^2.3.0"
   }
